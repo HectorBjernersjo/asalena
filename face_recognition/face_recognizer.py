@@ -24,7 +24,7 @@ def recognize_face(input_image, face_location) -> str:
     # input_image = face_recognition.load_image_file(image_location)
 
     # Extract the face from the provided location
-    top, right, bottom, left = face_location
+    top, left, bottom, right = face_location
     face_image = input_image[top:bottom, left:right]
 
     cv2.imshow("Face", face_image)

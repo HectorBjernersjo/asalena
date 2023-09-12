@@ -26,7 +26,7 @@ prev_frame_time = 0
 frame_times = []
 
 
-DEFAULT_ENCODINGS_PATH = "face_recognition/encodings.pkl"
+DEFAULT_ENCODINGS_PATH = "face_recognition/encodingsold.pkl"
 
 encodings_location=DEFAULT_ENCODINGS_PATH
 with open(encodings_location, "rb") as f:
@@ -36,9 +36,13 @@ def recognize_face(input_image, face_location) -> str:
     left, top, right, bottom = face_location
     face_image = input_image[top:bottom, left:right]
 
+    # face_locations = [face_location]
+
     cv2.imshow("Face", face_image)
 
-    input_face_encodings = face_recognition.face_encodings(face_image)
+    face_locations = [(0, right-left, bottom-top, 0)]  # Convert (x, y, w, h) to (top, right, bottom, left)
+    input_face_encodings = face_recognition.face_encodings(input_image, face_locations)
+
 
     if not input_face_encodings:
         return "No face"
