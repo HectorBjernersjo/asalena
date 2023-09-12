@@ -1,14 +1,9 @@
 import cv2
 import os
+import time
 
 cascPathface = os.path.dirname(
     cv2.__file__) + "/data/haarcascade_frontalface_alt2.xml"
-# cascPatheyes = os.path.dirname(
-#     cv2.__file__) + "/data/haarcascade_eye_tree_eyeglasses.xml"
-# cascPatheyes = os.path.dirname(
-#     cv2.__file__) + "/data/haarcascade_frontalface_default.xml.xml"
-# cascPatheyes = os.path.dirname(
-#     cv2.__file__) + "/data/haarcascade_frontalface_alt.xml"
 cascPatheyes = os.path.dirname(
     cv2.__file__) + "/data/haarcascade_profileface.xml"
 
@@ -16,6 +11,10 @@ faceCascade = cv2.CascadeClassifier(cascPathface)
 eyeCascade = cv2.CascadeClassifier(cascPatheyes)
 
 video_capture = cv2.VideoCapture(0)
+
+prev_frame_time = 0
+frame_times = []
+# times = []
 while True:
     # Capture frame-by-frame
     ret, frame = video_capture.read()
@@ -35,8 +34,20 @@ while True:
             frame = cv2.circle(frame, eye_center, radius, (255, 0, 0), 4)
 
         # Display the resulting frame
+    current_time = time.time()
+    frame_times.append(current_time - prev_frame_time)
+    if len(frame_times) > 10:
+        frame_times.pop(0)
+    avg_fps = 1 / (sum(frame_times) / len(frame_times))
+    print(avg_fps)
+    prev_frame_time = current_timed
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    cv2.putText(frame, f"Avg FPS: {int(avg_fps)}", (10, 30), font, 1, (0, 255, 0), 2)
     cv2.imshow('Video', frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
+    
+
+
 video_capture.release()
 cv2.destroyAllWindows()

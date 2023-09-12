@@ -1,0 +1,161 @@
+import cv2
+import numpy as np
+import time
+import os
+import pickle
+import face_recognition
+from collections import Counter
+
+# # Load MobileNetV2 + SSDLite
+net = cv2.dnn.readNetFromCaffe("deploy.prototxt", "mobilenet_iter_73000.caffemodel")
+classes = ["background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"]
+
+# Capture video from the default camera
+cap = cv2.VideoCapture(0)
+
+cascPathface = os.path.dirname(
+    cv2.__file__) + "/data/haarcascade_frontalface_alt2.xml"
+cascPatheyes = os.path.dirname(
+    cv2.__file__) + "/data/haarcascade_profileface.xml"
+
+faceCascade = cv2.CascadeClassifier(cascPathface)
+eyeCascade = cv2.CascadeClassifier(cascPatheyes)
+
+
+prev_frame_time = 0
+frame_times = []
+
+
+DEFAULT_ENCODINGS_PATH = "face_recognition/encodings.pkl"
+
+encodings_location=DEFAULT_ENCODINGS_PATH
+with open(encodings_location, "rb") as f:
+        loaded_encodings = pickle.load(f)
+
+def recognize_face(input_image, face_location) -> str:
+    left, top, right, bottom = face_location
+    face_image = input_image[top:bottom, left:right]
+
+    cv2.imshow("Face", face_image)
+
+    input_face_encodings = face_recognition.face_encodings(face_image)
+
+    if not input_face_encodings:
+        return "No face"
+
+    # Compare the input face with the known encodings
+    boolean_matches = face_recognition.compare_faces(loaded_encodings["encodings"], input_face_encodings[0])
+    votes = Counter(name for match, name in zip(boolean_matches, loaded_encodings["names"]) if match)
+
+    # Return the recognized name or 'Unknown' if no match is found
+    if votes:
+        return votes.most_common(1)[0][0]
+    else:
+        return "Unknown"
+
+
+# class person:
+#     def __init__(self, name, middle_position):
+#         self.name = name
+#         self.middle_position = middle_position<
+
+
+people = {}
+
+while True:
+    ret, frame = cap.read()
+    h, w = frame.shape[:2]
+    	
+    blob = cv2.dnn.blobFromImage(frame, 0.007843, (300, 300), 127.5)
+    net.setInput(blob)
+    detections = net.forward()
+    
+    bodie_positions = []
+
+    for i in range(detections.shape[2]):
+        confidence = detections[0, 0, i, 2]
+        if confidence > 0.2:
+            class_id = int(detections[0, 0, i, 1])
+            if classes[class_id] == "person":
+                box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+                (startX, startY, endX, endY) = box.astype("int")
+                # cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
+                if startY < 0:
+                    startY = 0
+                if startX < 0:
+                    startX = 0
+                if endX > w:
+                    endX = w
+                if endY > h:
+                    endY = h
+                bodie_positions.append((startX, startY, endX, endY))
+    
+    people_in_screen = []
+    for bodypos in bodie_positions:
+        current_person_name = "No face"
+        startX, startY, endX, endY = bodypos
+        middle_position = (startX + endX) / 2, (startY + endY) / 2
+        body = frame[startY:endY, startX:endX]
+
+        # draw dot in middle of body
+        cv2.circle(frame, (int(middle_position[0]), int(middle_position[1])), 5, (0, 0, 255), -1)
+
+        for name, middle_pos in people.items():
+            if abs(middle_pos[0] - middle_position[0]) < 50 and abs(middle_pos[1] - middle_position[1]) < 50:
+                current_person_name = name
+                people[name] = middle_position
+                people_in_screen.append(name)
+                break
+        
+        if current_person_name == "No face": 
+            gray = cv2.cvtColor(body, cv2.COLOR_BGR2GRAY)
+            faces = faceCascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE)
+            if len(faces) == 0:
+                continue
+            face = faces[0]
+            x, y, w, h = face
+            left, top, right, bottom = startX + x, startY + y, startX + x + w, startY + y + h
+            current_person_name = recognize_face(frame, (left, top, right, bottom))
+            if current_person_name != "No face":
+                people[current_person_name] = middle_position
+                people_in_screen.append(current_person_name)
+
+
+        cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
+        cv2.putText(frame, current_person_name, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+
+        
+    for name, middle_pos in people.items():
+        if name not in people_in_screen:
+            people.pop(name)
+            break
+
+    current_time = time.time()
+    frame_times.append(current_time - prev_frame_time)
+    if len(frame_times) > 10:
+        frame_times.pop(0)
+    avg_fps = 1 / (sum(frame_times) / len(frame_times))
+    # print(avg_fps)
+    prev_frame_time = current_time
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    cv2.putText(frame, f"Avg FPS: {int(avg_fps)}", (10, 30), font, 1, (0, 255, 0), 2)
+
+    cv2.imshow("Face and body detection", frame)
+
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+
+
+
+
+
+
+
+
+
+
+
+     
