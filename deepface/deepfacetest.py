@@ -2,12 +2,12 @@
 from deepface import DeepFace
 import time
 
-image1 = "reeves1.jpg"
-image2 = "reeves2.jpg"
+image1 = "../reeves1.jpg"
+image2 = "deepface/reeves2.jpg"
 image3 = 'Jet_Li_2009_(cropped).jpg'
 image4 = 'Denzel_Washington_2018.jpg'
 image5 = 'Smiling_girl.jpg'
-elon1 = "onlyfaces/elon_musk/testelon.jpg"
+elon1 = "../onlyfaces/elon_musk/testelon.jpg"
 elon2 = "onlyfaces/elon_musk/testelon2.jpg"
 zuck1 = "onlyfaces/mark_zuckerberg/testzuck.jpg"
 zuck2 = "onlyfaces/mark_zuckerberg/testzuck2.jpg"
@@ -18,7 +18,7 @@ import matplotlib.patches as patches
 from PIL import Image
 # %%
 
-image = image1
+image = elon1
 
 im = Image.open(image)
 
@@ -41,6 +41,6 @@ for model in models:
                              facecolor='none')
     ax.add_patch(rect)
     ax.set_title(f"Model: {model}")
-    plt.show()
+    # plt.show()
 
 # %%
