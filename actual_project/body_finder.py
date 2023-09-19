@@ -32,3 +32,17 @@ def find_body_positions(frame):
                     endY = h
                 bodie_positions.append((startX, startY, endX, endY))
     return bodie_positions
+
+if __name__ == "__main__":
+    import os
+    import time
+    test_images_path = "zotherimages"
+    for filename in os.listdir(test_images_path):
+        input_image = cv2.imread(f"{test_images_path}/{filename}")
+        start_time = time.time()
+        body_positions = find_body_positions(input_image)
+        print(f"Time to get face locations: {time.time() - start_time} seconds")
+        for (x, y, w, h) in body_positions:
+            cv2.rectangle(input_image, (x, y), (w, h), (0, 255, 0), 2)
+        cv2.imshow("image", input_image)
+        cv2.waitKey(0)

@@ -4,6 +4,7 @@ import os
 from keras_facenet import FaceNet
 import numpy as np
 import torch
+import torch.quantization
 from facenet_pytorch import InceptionResnetV1, fixed_image_standardization
 from torchvision.transforms import transforms
 import matplotlib.pyplot as plt
@@ -33,10 +34,10 @@ openface_preprocess = transforms.Compose([
     fixed_image_standardization
 ])
 
-openface_device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+if __name__ != "__main__":
+    openface_model = torch.load("deepface/openface_quantized.pt")
+    openface_model.eval()
 
-openface_model = InceptionResnetV1(pretrained='vggface2').eval()
-openface_model = openface_model.to(openface_device)
 
 def get_openface_embedding(cv2_img):
     img = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)  # Convert from BGR to RGB
@@ -60,3 +61,22 @@ def get_openface_embedding(cv2_img):
     with torch.no_grad():
         embedding = openface_model(tensor_img)
     return np.array(embedding.data)[0]
+
+if __name__ == "__main__":
+    openface_model = InceptionResnetV1(pretrained='vggface2').eval()
+
+    # 1. Fuse Modules
+    fuse_modules = [['conv2d_1a.conv', 'conv2d_1a.bn'],
+                    ['conv2d_2a.conv', 'conv2d_2a.bn'],
+                    # ... add other pairs as needed
+                ]
+
+    torch.quantization.fuse_modules(openface_model, fuse_modules, inplace=True)
+
+    # 2. Quantize
+    quantized_model = torch.quantization.quantize_dynamic(
+        openface_model, {torch.nn.Linear, torch.nn.Conv2d}, dtype=torch.qint8
+    )
+
+    # Save and load as before
+    torch.save(quantized_model, "deepface/openface_quantized.pt")

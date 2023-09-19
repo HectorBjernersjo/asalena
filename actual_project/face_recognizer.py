@@ -32,6 +32,7 @@ def recognize_face(input_image, face_location, encodings) -> str:
 if __name__ == "__main__":
     import os
     import pickle
+    import time
     test_images_path = "zotherimages"
     encodings_path = "encodingsoriginal.pkl"
     encodings = pickle.load(open(encodings_path, "rb"))
@@ -42,8 +43,9 @@ if __name__ == "__main__":
         input_image = cv2.imread(f"{test_images_path}/{filename}")
         face_locations = face_recognition.face_locations(input_image)
         for (top, right, bottom, left) in face_locations:
-
+            start_time = time.time()
             recognized_name = recognize_face(input_image, (left, top, right, bottom), encodings)
+            print(f"Time to recognize face: {time.time() - start_time} seconds")
             print(f"{filename}: {recognized_name}")
             cv2.rectangle(input_image, (left, top), (right, bottom), (0, 255, 0), 2)
             cv2.putText(input_image, recognized_name, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)

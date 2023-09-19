@@ -20,3 +20,17 @@ def get_face_images(frame):
     for (x, y, w, h) in faces:
         face_images.append(frame[y:y+h, x:x+w])
     return face_images
+
+if __name__ == "__main__":
+    import os
+    import time
+    test_images_path = "zotherimages"
+    for filename in os.listdir(test_images_path):
+        input_image = cv2.imread(f"{test_images_path}/{filename}")
+        start_time = time.time()
+        face_locations = get_face_locations(input_image)
+        print(f"Time to get face locations: {time.time() - start_time} seconds")
+        for (x, y, w, h) in face_locations:
+            cv2.rectangle(input_image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        cv2.imshow("image", input_image)
+        cv2.waitKey(0)

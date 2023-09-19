@@ -8,7 +8,6 @@ import os
 import faiss
 import numpy as np
 import get_embeddings
-import face_recognition
 
 cascPathface = os.path.dirname(
     cv2.__file__) + "/data/haarcascade_frontalface_alt2.xml"
@@ -72,43 +71,3 @@ for path in image_paths:
 
     cv2.imshow("image", image)
     cv2.waitKey(0)
-
-
-
-    # start_time = time.time()
-    # embeddingorg = get_embeddings.get_openface_embedding(image)
-    # embedding = np.array(embeddingorg).astype('float32').reshape(1, -1)
-    # print("Time to get embedding:", time.time() - start_time)
-
-    # start_time = time.time()
-    # distances, indexes = index.search(embedding, 3)
-    # print("Time to search index:", time.time() - start_time)
-    
-    # print("Distances:", distances)
-    # print("Indexes:", indexes)
-
-    # best_names = [names[i] for i in indexes[0]]
-    # print("Names:", best_names)
-
-    # # print(people)
-
-
-
-    # # closest_distance = 100
-    # # closest_name = None
-    # # for name, embedding in embeddings.items():
-    # #     distance = cosine(current_embeddings[0]['embedding'], embedding[0]['embedding'])
-    # #     if distance < closest_distance:
-    # #         closest_distance = distance
-    # #         closest_name = name
-    
-    # # print(f"Closest match for {path} is {closest_name} with distance {closest_distance}")
-    # # cv2.putText(image, best_names[0], (face_rect['x'], face_rect['y'] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-    # cv2.putText(image, best_names[0], (0, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-    # cv2.putText(image, best_names[1], (0, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-    # cv2.putText(image, best_names[2], (0, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-
-    # cv2.imshow("image", image)
-    # cv2.waitKey(0)
-
-    # os.remove(temp_path)
