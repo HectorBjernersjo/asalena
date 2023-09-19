@@ -34,7 +34,7 @@ if __name__ == "__main__":
     import pickle
     import time
     test_images_path = "zotherimages"
-    encodings_path = "encodingsoriginal.pkl"
+    encodings_path = "encodings.pkl"
     encodings = pickle.load(open(encodings_path, "rb"))
 
     for filename in os.listdir(test_images_path):
