@@ -1,14 +1,38 @@
 from deepface import DeepFace
 import time
 import cv2
-# from PIL import Image
+# from PIL import Image0
 import pickle
 import os
-from scipy.spatial.distance import cosine
+# from scipy.spatial.distance import cosine
 import faiss
 import numpy as np
+import get_embeddings
+import face_recognition
 
-TEST_IMAGES_PATH = "deepface/images/only_faces"
+cascPathface = os.path.dirname(
+    cv2.__file__) + "/data/haarcascade_frontalface_alt2.xml"
+cascPatheyes = os.path.dirname(
+    cv2.__file__) + "/data/haarcascade_profileface.xml"
+
+faceCascade = cv2.CascadeClassifier(cascPathface)
+eyeCascade = cv2.CascadeClassifier(cascPatheyes)
+
+def get_face_locations(frame):
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    faces = faceCascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE)
+    return faces
+
+def get_face_images(frame):
+    faces = get_face_locations(frame)
+    face_images = []
+    for (x, y, w, h) in faces:
+        face_images.append(frame[y:y+h, x:x+w])
+    return face_images
+
+TEST_IMAGES_PATH = "zotherimages"
+
+model = "DeepID"
 
 # embeddings = pickle.load(open("deepface/embeddings.pkl", "rb"))
 index = faiss.read_index("deepface/face_index.faiss")
@@ -25,42 +49,66 @@ for path in image_paths:
         else:
             image = cv2.resize(image, (1000, int(1000 * aspect_ratio)))
 
-    # save the downscaled image to a temporary path
-    temp_path = f"temp.jpg"
-    cv2.imwrite(temp_path, image)
+    face_locations = get_face_locations(image)
     
-    start_time = time.time()
-    embeddingorg = DeepFace.represent(temp_path, model_name="Facenet", enforce_detection=False)
-    embedding = np.array(embeddingorg[0]['embedding']).astype('float32').reshape(1, -1)  # reshape the embedding to 2D
-    print("Time to get embedding:", time.time() - start_time)
-    start_time = time.time()
-    distances, indexes = index.search(embedding, 3)
-    print("Time to search index:", time.time() - start_time)
-    print("Distances:", distances)
-    print("Indexes:", indexes)
-    best_names = [names[i] for i in indexes[0]]
-    print("Names:", best_names)
+    for (x, y, w, h) in face_locations:
+        face_image = image[y:y+h, x:x+w]
+        
+        start_time = time.time()
+        embedding = get_embeddings.get_openface_embedding(face_image)
+        print("Time to get embedding:", time.time() - start_time)
+        start_time = time.time()
+        embedding = np.array(embedding).astype('float32').reshape(1, -1)
+        distances, indexes = index.search(embedding, 1)
+        print("Time to search index:", time.time() - start_time)
+        best_name = names[indexes[0][0]]
+        distance = distances[0][0]
 
-    # print(people)
+        if distance > 0.6:
+            best_name = "Unknown"
 
-
-
-    # closest_distance = 100
-    # closest_name = None
-    # for name, embedding in embeddings.items():
-    #     distance = cosine(current_embeddings[0]['embedding'], embedding[0]['embedding'])
-    #     if distance < closest_distance:
-    #         closest_distance = distance
-    #         closest_name = name
-    
-    # print(f"Closest match for {path} is {closest_name} with distance {closest_distance}")
-    face_rect = embeddingorg[0]['facial_area']
-    cv2.rectangle(image, (face_rect['x'], face_rect['y']), (face_rect['x'] + face_rect['w'], face_rect['y'] + face_rect['h']), (0, 255, 0), 2)
-    cv2.putText(image, best_names[0], (face_rect['x'], face_rect['y'] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-    cv2.putText(image, best_names[1], (0, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-    cv2.putText(image, best_names[2], (0, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        cv2.putText(image, f"{best_name} - {distance:.2f}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
     cv2.imshow("image", image)
     cv2.waitKey(0)
 
-    os.remove(temp_path)
+
+
+    # start_time = time.time()
+    # embeddingorg = get_embeddings.get_openface_embedding(image)
+    # embedding = np.array(embeddingorg).astype('float32').reshape(1, -1)
+    # print("Time to get embedding:", time.time() - start_time)
+
+    # start_time = time.time()
+    # distances, indexes = index.search(embedding, 3)
+    # print("Time to search index:", time.time() - start_time)
+    
+    # print("Distances:", distances)
+    # print("Indexes:", indexes)
+
+    # best_names = [names[i] for i in indexes[0]]
+    # print("Names:", best_names)
+
+    # # print(people)
+
+
+
+    # # closest_distance = 100
+    # # closest_name = None
+    # # for name, embedding in embeddings.items():
+    # #     distance = cosine(current_embeddings[0]['embedding'], embedding[0]['embedding'])
+    # #     if distance < closest_distance:
+    # #         closest_distance = distance
+    # #         closest_name = name
+    
+    # # print(f"Closest match for {path} is {closest_name} with distance {closest_distance}")
+    # # cv2.putText(image, best_names[0], (face_rect['x'], face_rect['y'] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+    # cv2.putText(image, best_names[0], (0, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+    # cv2.putText(image, best_names[1], (0, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+    # cv2.putText(image, best_names[2], (0, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+
+    # cv2.imshow("image", image)
+    # cv2.waitKey(0)
+
+    # os.remove(temp_path)

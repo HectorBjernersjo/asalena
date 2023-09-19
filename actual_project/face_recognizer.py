@@ -1,6 +1,5 @@
 import cv2
 import face_recognition
-import pickle
 from collections import Counter
 
 def recognize_face(input_image, face_location, encodings) -> str:
@@ -28,3 +27,25 @@ def recognize_face(input_image, face_location, encodings) -> str:
         return votes.most_common(1)[0][0]
     else:
         return "Unknown"
+    
+
+if __name__ == "__main__":
+    import os
+    import pickle
+    test_images_path = "zotherimages"
+    encodings_path = "encodingsoriginal.pkl"
+    encodings = pickle.load(open(encodings_path, "rb"))
+
+    for filename in os.listdir(test_images_path):
+        if filename == "desktop.ini":
+            continue
+        input_image = cv2.imread(f"{test_images_path}/{filename}")
+        face_locations = face_recognition.face_locations(input_image)
+        for (top, right, bottom, left) in face_locations:
+
+            recognized_name = recognize_face(input_image, (left, top, right, bottom), encodings)
+            print(f"{filename}: {recognized_name}")
+            cv2.rectangle(input_image, (left, top), (right, bottom), (0, 255, 0), 2)
+            cv2.putText(input_image, recognized_name, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        cv2.imshow("image", input_image)
+        cv2.waitKey(0)

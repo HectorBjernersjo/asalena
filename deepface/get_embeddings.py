@@ -1,45 +1,62 @@
 from deepface import DeepFace
-import time
 import cv2
-import io
-from PIL import Image
-
-WHOLE_IMAGES_PATH = "deepface/images/whole_images"
-ONLY_FACES_PATH = "deepface/images/only_faces"
-
-names = ["Hector", "Anton", "Filip"]
-
-whole_image_paths = [f"{WHOLE_IMAGES_PATH}/{name}.jpg" for name in names]
-only_face_paths = [f"{ONLY_FACES_PATH}/{name}" for name in names]
-
-embeddings = {}
 import os
-for name, path in zip(names, whole_image_paths):
-    # Load the image using cv2
-    img = cv2.imread(path)
+from keras_facenet import FaceNet
+import numpy as np
+import torch
+from facenet_pytorch import InceptionResnetV1, fixed_image_standardization
+from torchvision.transforms import transforms
+import matplotlib.pyplot as plt
 
-    # Downscale the image by 50%
-    height, width = img.shape[:2]
-    resized_img = cv2.resize(img, (int(width * 0.3), int(height * 0.3)))
+facenet_model = FaceNet()
 
-    # Save the downscaled image to a temporary path
-    temp_path = f"temp_{name}.jpg"
-    cv2.imwrite(temp_path, resized_img)
-
-    # Get the embeddings using the downscaled image
-    start = time.time()
-    embeddings[name] = DeepFace.represent(temp_path, model_name="Facenet", enforce_detection=False)
-    print(f"Encoding {name} took {time.time() - start} seconds")
-    
-    rect = embeddings[name][0]['facial_area']
-    cv2.rectangle(resized_img, (rect['x'], rect['y']), (rect['x'] + rect['w'], rect['y'] + rect['h']), (0, 255, 0), 2)
-    cv2.imshow(name, resized_img)
-    cv2.waitKey(0)
-
-    # Remove the temporary image
+def get_deepface_embedding(cv2_img, model_name="Facenet"):
+    """Get the embedding for a given image."""
+    # Directly get the embedding without detection
+    temp_path = "temp.jpg"
+    cv2.imwrite(temp_path, cv2_img)
+    embeddings = DeepFace.represent(temp_path, model_name=model_name, enforce_detection=False)
     os.remove(temp_path)
+    return embeddings[0]
 
-# save the embeddings to a file
-import pickle
-with open("deepface/embeddings.pkl", "wb") as f:
-    pickle.dump(embeddings, f)
+def get_facenet_embedding(cv2_img):
+    img = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)  # Convert from BGR to RGB
+    img_resized = cv2.resize(img, (160, 160))
+    img_array = np.expand_dims(img_resized, axis=0)
+    embedding = facenet_model.embeddings(img_array)[0]
+    return embedding
+
+openface_preprocess = transforms.Compose([
+    transforms.ToPILImage(),
+    transforms.Resize((160, 160)),
+    transforms.ToTensor(),
+    fixed_image_standardization
+])
+
+openface_device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+openface_model = InceptionResnetV1(pretrained='vggface2').eval()
+openface_model = openface_model.to(openface_device)
+
+def get_openface_embedding(cv2_img):
+    img = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)  # Convert from BGR to RGB
+
+    pil_img = transforms.ToPILImage()(img)
+    # pil_img.show()  # Check after conversion to PIL
+
+    resized_img = transforms.Resize((160, 160))(pil_img)
+    # resized_img.show()  # Check after resizing
+
+    tensor_img = transforms.ToTensor()(resized_img)
+    # print(tensor_img.min(), tensor_img.max())  # Check tensor value range
+
+    # normalized_img = fixed_image_standardization(tensor_img)
+    # # print(normalized_img.min(), normalized_img.max())  # Check normalized tensor value range
+
+    # img_tensor = normalized_img
+    tensor_img = tensor_img.unsqueeze(0)  # Add batch dimension
+    # plt.imshow(tensor_img[0].permute(1, 2, 0))
+    # plt.show()
+    with torch.no_grad():
+        embedding = openface_model(tensor_img)
+    return np.array(embedding.data)[0]

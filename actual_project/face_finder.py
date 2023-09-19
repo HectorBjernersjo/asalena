@@ -9,7 +9,14 @@ cascPatheyes = os.path.dirname(
 faceCascade = cv2.CascadeClassifier(cascPathface)
 eyeCascade = cv2.CascadeClassifier(cascPatheyes)
 
-def find_faces(frame):
+def get_face_locations(frame):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     faces = faceCascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE)
     return faces
+
+def get_face_images(frame):
+    faces = get_face_locations(frame)
+    face_images = []
+    for (x, y, w, h) in faces:
+        face_images.append(frame[y:y+h, x:x+w])
+    return face_images

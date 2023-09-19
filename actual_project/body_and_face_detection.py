@@ -86,7 +86,7 @@ while True:
                 break
         
         if current_person_name == "No face": 
-            faces = face_finder.find_faces(body)
+            faces = face_finder.get_face_locations(body)
             if len(faces) == 0:
                 continue
             face = faces[0]

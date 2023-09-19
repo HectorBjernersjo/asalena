@@ -26,11 +26,11 @@ models = ['VGG-Face', 'Facenet', 'OpenFace', 'DeepFace', 'DeepID', 'ArcFace']
 
 for model in models:
     start = time.time()
-    embeddings = DeepFace.represent(image, model_name=model, enforce_detection=False)
+    embeddings = DeepFace.represent(image, model_name=model, enforce_detection=True)
     print(f"Encoding {image} with {model} took {time.time() - start} seconds")
 
-    fig, ax = plt.subplots()
-    ax.imshow(im)
+    # fig, ax = plt.subplots()
+    # ax.imshow(im)
 
     # draw a rectangle around the face
     face_coord = embeddings[0]['facial_area']
@@ -39,8 +39,23 @@ for model in models:
                              linewidth=2, 
                              edgecolor='r', 
                              facecolor='none')
-    ax.add_patch(rect)
-    ax.set_title(f"Model: {model}")
+    # ax.add_patch(rect)
+    # ax.set_title(f"Model: {model}")
     # plt.show()
 
+# %%
+import get_embeddings
+import cv2
+
+image = elon1
+img = cv2.imread(image)
+
+embedding = get_embeddings.get_deepface_embedding(img, model_name="Facenet")
+embedding = get_embeddings.get_facenet_embedding(img)
+
+start_time = time.time()
+for i in range(100):
+    embedding = get_embeddings.get_deepface_embedding(img, model_name="Facenet")
+    # embedding = get_embeddings.get_facenet_embedding(img)
+print("Time to get embedding:", (time.time() - start_time) / 100)
 # %%

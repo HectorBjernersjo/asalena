@@ -7,6 +7,7 @@ from PIL import Image, ImageDraw
 from tqdm import tqdm
 import cv2
 import sys
+import time
 
 print(sys.version)
 
