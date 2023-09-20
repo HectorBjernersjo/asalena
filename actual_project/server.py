@@ -57,11 +57,15 @@ def process_frame():
     start_time = time.time()
     global prev_frame_time, frame_times
 
+    to_return = {}
+
     # Assuming the frame is sent as an image file
     file = request.files['frame']
     npimg = np.fromstring(file.read(), np.uint8)
     frame = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
-    
+
+    print("time to get frame: ", time.time() - start_time)
+
     body_positions = body_finder.find_body_positions(frame)
     people_in_screen = []
 
@@ -71,7 +75,7 @@ def process_frame():
         body = cutout_image(frame, bodypos)
         middle_position = get_middle_position(bodypos)
 
-        cv2.circle(frame, (int(middle_position[0]), int(middle_position[1])), 5, (0, 0, 255), -1)
+        # cv2.circle(frame, (int(middle_position[0]), int(middle_position[1])), 5, (0, 0, 255), -1)
 
         for name, middle_pos in people.items():
             if abs(middle_pos[0] - middle_position[0]) < 50 and abs(middle_pos[1] - middle_position[1]) < 50:
@@ -91,9 +95,10 @@ def process_frame():
             if current_person_name != "No face":
                 people[current_person_name] = middle_position
                 people_in_screen.append(current_person_name)
+        to_return[current_person_name] = middle_position
 
-        cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
-        cv2.putText(frame, current_person_name, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        # cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
+        # cv2.putText(frame, current_person_name, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
     for name, middle_pos in people.items():
         if name not in people_in_screen:
@@ -103,11 +108,12 @@ def process_frame():
     avg_fps, prev_frame_time = update_frame_times(prev_frame_time, frame_times)
     draw_frame(frame, avg_fps)
 
+    print("time at end of regular stuff: ", time.time() - start_time)
     # Convert the processed frame back to image format for sending
-    _, img_encoded = cv2.imencode('.jpg', frame)
-    response = send_file(BytesIO(img_encoded), mimetype='image/jpeg')
-    print(f"Time to process frame: {time.time() - start_time} seconds")
-    return response
+    # _, img_encoded = cv2.imencode('.jpg', frame)
+    # response = send_file(BytesIO(img_encoded), mimetype='image/jpeg')
+    print(f"Time to do everything: {time.time() - start_time} seconds")
+    return to_return
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0")

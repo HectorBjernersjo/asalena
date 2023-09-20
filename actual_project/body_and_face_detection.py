@@ -66,7 +66,9 @@ people = {}
 cap = cv2.VideoCapture(0)
 
 while True:
+    start_time = time.time()
     ret, frame = cap.read()
+    print(frame.shape)
     # frame = get_esp_frame()
     
     body_positions = body_finder.find_body_positions(frame)
@@ -117,6 +119,7 @@ while True:
     avg_fps, prev_frame_time = update_frame_times(prev_frame_time, frame_times)
     draw_frame(frame, avg_fps)	
 
+    print(f"Time to process frame: {time.time() - start_time} seconds")
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
