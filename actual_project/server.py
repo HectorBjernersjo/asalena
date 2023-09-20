@@ -115,5 +115,10 @@ def process_frame():
     print(f"Time to do everything: {time.time() - start_time} seconds")
     return to_return
 
+
+@app.route('/test', methods=['GET'])
+def test():
+    return "Hello world"
+
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0")
