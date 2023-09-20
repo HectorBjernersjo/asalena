@@ -1,4 +1,4 @@
-from deepface import DeepFace
+# from deepface import DeepFace
 import time
 import cv2
 # from PIL import Image0

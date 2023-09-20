@@ -10,6 +10,7 @@ import requests
 import body_finder
 import face_finder
 import face_recognizer
+import openface_recognizer
 
 prev_frame_time = 0
 frame_times = []
@@ -62,9 +63,11 @@ def draw_frame(frame, fps):
 
 people = {}
 
+cap = cv2.VideoCapture(0)
+
 while True:
-    # ret, frame = cap.read()
-    frame = get_esp_frame()
+    ret, frame = cap.read()
+    # frame = get_esp_frame()
     
     body_positions = body_finder.find_body_positions(frame)
     
@@ -92,7 +95,10 @@ while True:
             face = faces[0]
             x, y, w, h = face
             left, top, right, bottom = startX + x, startY + y, startX + x + w, startY + y + h
-            current_person_name = face_recognizer.recognize_face(frame, (left, top, right, bottom), loaded_encodings)
+            # current_person_name = face_recognizer.recognize_face(frame, (left, top, right, bottom), loaded_encodings)
+            cv2.imshow("Face", frame[top:bottom, left:right])
+            current_person_name = openface_recognizer.recognize_face_from_frame(frame, (left, top, right, bottom))
+            
             if current_person_name != "No face":
                 people[current_person_name] = middle_position
                 people_in_screen.append(current_person_name)
