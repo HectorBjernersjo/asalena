@@ -10,8 +10,8 @@ frame_times = []
 
 while True:
     start_time = time.time()
-    ret, frame = cap.read()
-    _, img_encoded = cv2.imencode('.jpg', frame)
+    # ret, frame = cap.read()
+    # _, img_encoded = cv2.imencode('.jpg', frame)
     # response = requests.post(VIDEO_PATH, files={'frame': img_encoded.tostring()})
     response = requests.get(TEST_PATH)
     # print(response.json())
