@@ -1,7 +1,7 @@
 from deepface import DeepFace
 import cv2
 import os
-from keras_facenet import FaceNet
+# from keras_facenet import FaceNet
 import numpy as np
 import torch
 import torch.quantization
@@ -9,7 +9,7 @@ from facenet_pytorch import InceptionResnetV1, fixed_image_standardization
 from torchvision.transforms import transforms
 import matplotlib.pyplot as plt
 
-facenet_model = FaceNet()
+# facenet_model = FaceNet()
 
 def get_deepface_embedding(cv2_img, model_name="Facenet"):
     """Get the embedding for a given image."""
