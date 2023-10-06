@@ -5,6 +5,10 @@ from torchvision.transforms import transforms
 import numpy as np
 import pickle
 import faiss
+from PIL import Image, ImageDraw
+import time
+
+IMG_FOLDER = "D:/.shortcut-targets-by-id/1-tD6MqrxaOmV-9_wxYe_CLwE2LvU_Vcs/Åsalena/jpg_generated_only_face"
 
 if __name__ != "__main__":
     openface_model = torch.load("deepface/openface_quantized.pt")
@@ -39,4 +43,8 @@ def recognize_face_from_image(face_img):
 def recognize_face_from_frame(frame, face_position):
     left, top, right, bottom = face_position
     face_img = frame[top:bottom, left:right]
-    return recognize_face_from_image(face_img)
+    # save face image
+    plt_image = Image.fromarray(cv2.cvtColor(face_img, cv2.COLOR_BGR2RGB))
+    name = recognize_face_from_image(face_img)
+    plt_image.save(f"{IMG_FOLDER}/{name}-{time.time()}.jpg")
+    return name

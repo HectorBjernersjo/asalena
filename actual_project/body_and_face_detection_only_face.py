@@ -1,15 +1,10 @@
 import cv2
 import numpy as np
 import time
-import os
 import pickle
-import face_recognition
-from collections import Counter
 import requests
 
-import body_finder
 import caffe_detect_faces
-import face_recognizer
 import openface_recognizer
 
 prev_frame_time = 0
@@ -58,7 +53,8 @@ def update_frame_times(prev_frame_time, frame_times):
 
 def draw_frame(frame, fps):
     font = cv2.FONT_HERSHEY_SIMPLEX
-    cv2.putText(frame, f"Avg FPS: {int(fps)}", (10, 30), font, 1, (0, 255, 0), 2)
+    time_per_frame = 1 / fps
+    cv2.putText(frame, f"Avg FPS: {int(fps)}, tpf: {time_per_frame:.2f}", (10, 30), font, 1, (0, 255, 0), 2)
     cv2.imshow("Face and body detection", frame)
 
 people = {}
@@ -68,19 +64,19 @@ cap = cv2.VideoCapture(0)
 while True:
     start_time = time.time()
     ret, frame = cap.read()
-    # print(frame.shape)
+    print(frame.shape)
     # frame = get_esp_frame()
     
-    body_positions = body_finder.find_body_positions(frame)
+    face_positions = caffe_detect_faces.detect_faces(frame)
     
     people_in_screen = []
-    for bodypos in body_positions:
+    for facepos in face_positions:
         current_person_name = "No face"
-        startX, startY, endX, endY = bodypos
-        body = cutout_image(frame, bodypos)
-        middle_position = get_middle_position(bodypos)
+        startX, startY, endX, endY = facepos
+        face = cutout_image(frame, facepos)
+        middle_position = get_middle_position(facepos)
 
-        # draw dot in middle of body
+        # draw dot in middle of face
         cv2.circle(frame, (int(middle_position[0]), int(middle_position[1])), 5, (0, 0, 255), -1)
 
         for name, middle_pos in people.items():
@@ -89,44 +85,20 @@ while True:
                 people[name] = middle_position
                 people_in_screen.append(name)
                 break
-        faces = caffe_detect_faces.detect_faces(body)
-        if len(faces) == 0:
-            continue
-        print(f"Found {len(faces)} faces")
-        face = faces[0]
-        # x, y, w, h = face
-        # left, top, right, bottom = startX + x, startY + y, startX + x + w, startY + y + h
-        left, top, right, bottom = face
-        left += startX
-        top += startY
-        right += startX
-        bottom += startY
-        # current_person_name = face_recognizer.recognize_face(frame, (left, top, right, bottom), loaded_encodings)
-        cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+        
         if current_person_name == "No face": 
-            # faces = caffe_detect_faces.detect_faces(body)
-            # if len(faces) == 0:
-            #     continue
-            # print(f"Found {len(faces)} faces")
-            # face = faces[0]
-            # # x, y, w, h = face
-            # # left, top, right, bottom = startX + x, startY + y, startX + x + w, startY + y + h
-            # left, top, right, bottom = face
             # current_person_name = face_recognizer.recognize_face(frame, (left, top, right, bottom), loaded_encodings)
-            cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
-            cv2.imshow("Face", frame[top:bottom, left:right])
-            current_person_name = openface_recognizer.recognize_face_from_frame(frame, (left, top, right, bottom))
-            
-            if current_person_name != "No face":
-                people[current_person_name] = middle_position
-                people_in_screen.append(current_person_name)
+            cv2.imshow("Face", frame[startY:endY, startX:endX])
+            current_person_name = openface_recognizer.recognize_face_from_frame(frame, (startX, startY, endX, endY))
+        
+            people[current_person_name] = middle_position
+            people_in_screen.append(current_person_name)
 
 
         cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
         cv2.putText(frame, current_person_name, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
 
-        
     for name, middle_pos in people.items():
         if name not in people_in_screen:
             people.pop(name)
@@ -135,7 +107,7 @@ while True:
     avg_fps, prev_frame_time = update_frame_times(prev_frame_time, frame_times)
     draw_frame(frame, avg_fps)
 
-    # print(f"Time to process frame: {time.time() - start_time} seconds")
+    print(f"Time to process frame: {time.time() - start_time} seconds")
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
