@@ -11,7 +11,7 @@ for i, line in enumerate(lines):
     line = line.replace("\"", "\\\"")
     code += "\nlines_times[\""+line+"\"] = { \"total_time\": 0, \"times\": 0, \"linenumber\": \""+str(i)+"\" }"
 
-incorrect_starts = ["#", "for", "with", "def", "if", "return", "while", "break"]
+incorrect_starts = ["#", "for", "with", "def", "if", "return", "while", "break", "continue", "else", "elif", "try", "except", "finally", "import", "from"]
 for line in lines:
     if line.strip() == "":
         continue
@@ -51,9 +51,11 @@ for line in lines:
 code += """
 total_time = sum([data['total_time'] for data in lines_times.values()])
 for line, data in lines_times.items():
-    # print(f"{data['linenumber']} {line} --- tottime: {data['total_time']}, times: {data['times']}")
-    print("{:>4} {:<100} --- tottime: {:<5}, times: {:<4}, percent: {:<4}".format(data['linenumber'], line, "{:.2f}".format(data['total_time']), data['times'], "{:.2f}".format(data['total_time'] / total_time * 100)))
-print("\n\n\n\n")
+    if data['times'] > 0:
+        print("{:>4} {:<100} --- tottime: {:<5}, times: {:<4}, percent: {:<4}, avg: {:<4}".format(data['linenumber'], line, "{:.2f}".format(data['total_time']), data['times'], "{:.2f}".format(data['total_time'] / total_time * 100), "{:.2f}".format(data['total_time'] / data['times'])))
+    else:
+        print("{:>4} {:<100} --- tottime: {:<5}, times: {:<4}, percent: {:<4}".format(data['linenumber'], line, "{:.2f}".format(data['total_time']), data['times'], "{:.2f}".format(data['total_time'] / total_time * 100)))
+print("\\n\\n\\n\\n")
 sorted_lines = sorted(lines_times.items(), key=lambda x: x[1]['total_time'], reverse=True)
 for line, data in sorted_lines:
     print("{:>4} {:<100} --- tottime: {:<5}, times: {:<4}, percent: {:<4}".format(data['linenumber'], line, "{:.2f}".format(data['total_time']), data['times'], "{:.2f}".format(data['total_time'] / total_time * 100)))
@@ -68,4 +70,4 @@ import importlib.util
 spec = importlib.util.spec_from_file_location("temp_code", f"{dir}/temp_code.py")
 temp_code = importlib.util.module_from_spec(spec)
 
-spec.loader.exec_module(temp_code)
+

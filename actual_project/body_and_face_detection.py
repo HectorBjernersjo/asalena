@@ -6,15 +6,21 @@ import pickle
 import face_recognition
 from collections import Counter
 import requests
+import random
 
 import body_finder
 import caffe_detect_faces
+import face_finder
 import face_recognizer
 import openface_recognizer
 
 prev_frame_time = 0
 frame_times = []
 
+time_for_face_detection_in_bodies = 0
+times_for_face_detection_in_bodies = 0
+time_for_face_recognition_general = 0
+times_for_face_recognition_general = 0
 
 ENCODINGS_PATH = "face_recognition/encodingsold.pkl"
 
@@ -61,6 +67,16 @@ def draw_frame(frame, fps):
     cv2.putText(frame, f"Avg FPS: {int(fps)}", (10, 30), font, 1, (0, 255, 0), 2)
     cv2.imshow("Face and body detection", frame)
 
+def save_face(face_img, name, confidence):
+    folder = "face_images"
+    if confidence < 0.35:
+        folder += f"/{name}"
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    cv2.imwrite(f"{folder}/{name}-{time.time()}.jpg", face_img)
+
+        
+
 people = {}
 
 cap = cv2.VideoCapture(0)
@@ -71,8 +87,12 @@ while True:
     # print(frame.shape)
     # frame = get_esp_frame()
     
+    start_time = time.time()
     body_positions = body_finder.find_body_positions(frame)
     
+    # face_positions = caffe_detect_faces.detect_faces(frame)
+    # face_positions_2 = face_finder.get_face_locations(frame)
+
     people_in_screen = []
     for bodypos in body_positions:
         current_person_name = "No face"
@@ -80,42 +100,45 @@ while True:
         body = cutout_image(frame, bodypos)
         middle_position = get_middle_position(bodypos)
 
-        # draw dot in middle of body
-        cv2.circle(frame, (int(middle_position[0]), int(middle_position[1])), 5, (0, 0, 255), -1)
-
+        
         for name, middle_pos in people.items():
             if abs(middle_pos[0] - middle_position[0]) < 50 and abs(middle_pos[1] - middle_position[1]) < 50:
                 current_person_name = name
                 people[name] = middle_position
                 people_in_screen.append(name)
                 break
-        faces = caffe_detect_faces.detect_faces(body)
-        if len(faces) == 0:
-            continue
-        print(f"Found {len(faces)} faces")
-        face = faces[0]
-        # x, y, w, h = face
-        # left, top, right, bottom = startX + x, startY + y, startX + x + w, startY + y + h
-        left, top, right, bottom = face
-        left += startX
-        top += startY
-        right += startX
-        bottom += startY
+        
         # current_person_name = face_recognizer.recognize_face(frame, (left, top, right, bottom), loaded_encodings)
-        cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+        # cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
         if current_person_name == "No face": 
+            faces = caffe_detect_faces.detect_faces(body)
+            # faces_2 = face_finder.get_face_locations(body)
+            if len(faces) == 0:
+                continue
+            print(f"Found {len(faces)} faces")
+            face = faces[0]
+            # x, y, w, h = face
+            # left, top, right, bottom = startX + x, startY + y, startX + x + w, startY + y + h
+            left, top, right, bottom = face
+            left += startX
+            top += startY
+            right += startX
+            bottom += startY
             # faces = caffe_detect_faces.detect_faces(body)
             # if len(faces) == 0:
             #     continue
-            # print(f"Found {len(faces)} faces")
+            # print(f"Found {len(faces)} faces")ä
             # face = faces[0]
             # # x, y, w, h = face
             # # left, top, right, bottom = startX + x, startY + y, startX + x + w, startY + y + h
             # left, top, right, bottom = face
             # current_person_name = face_recognizer.recognize_face(frame, (left, top, right, bottom), loaded_encodings)
+            current_person_name = openface_recognizer.recognize_face_from_frame(frame, (left, top, right, bottom))
+            confidence = float(current_person_name.split("-")[1])
+            name = current_person_name.split("-")[0]
+            save_face(frame[top:bottom, left:right], name, confidence)
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
             cv2.imshow("Face", frame[top:bottom, left:right])
-            current_person_name = openface_recognizer.recognize_face_from_frame(frame, (left, top, right, bottom))
             
             if current_person_name != "No face":
                 people[current_person_name] = middle_position
