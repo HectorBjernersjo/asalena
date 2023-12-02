@@ -11,10 +11,10 @@ import time
 IMG_FOLDER = "D:/.shortcut-targets-by-id/1-tD6MqrxaOmV-9_wxYe_CLwE2LvU_Vcs/Åsalena/jpg_generated_only_face"
 
 if __name__ != "__main__":
-    openface_model = torch.load("deepface/openface_quantized.pt")
+    openface_model = torch.load("openface_quantized.pt")
     openface_model.eval()
-    index = faiss.read_index("deepface/face_index.faiss")
-    names = pickle.load(open("deepface/names.pkl", "rb"))
+    index = faiss.read_index("face_index.faiss")
+    names = pickle.load(open("names.pkl", "rb"))
 
 def get_openface_embedding(cv2_img):
     img = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)  # Convert from BGR to RGB

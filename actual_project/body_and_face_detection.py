@@ -3,15 +3,10 @@ import numpy as np
 import time
 import os
 import pickle
-import face_recognition
-from collections import Counter
 import requests
-import random
 
 import body_finder
 import caffe_detect_faces
-import face_finder
-import face_recognizer
 import openface_recognizer
 
 prev_frame_time = 0
@@ -22,10 +17,10 @@ times_for_face_detection_in_bodies = 0
 time_for_face_recognition_general = 0
 times_for_face_recognition_general = 0
 
-ENCODINGS_PATH = "face_recognition/encodingsold.pkl"
+# ENCODINGS_PATH = "face_recognition/encodingsold.pkl"
 
-with open(ENCODINGS_PATH, "rb") as f:
-        loaded_encodings = pickle.load(f)
+# with open(ENCODINGS_PATH, "rb") as f:
+#         loaded_encodings = pickle.load(f)
 
 
 def get_esp_frame():
