@@ -8,7 +8,7 @@ import faiss
 from PIL import Image, ImageDraw
 import time
 
-IMG_FOLDER = "D:/.shortcut-targets-by-id/1-tD6MqrxaOmV-9_wxYe_CLwE2LvU_Vcs/Åsalena/jpg_generated_only_face"
+IMG_FOLDER = "face_images"
 
 if __name__ != "__main__":
     openface_model = torch.load("openface_quantized.pt")

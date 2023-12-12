@@ -76,24 +76,22 @@ people = {}
 
 cap = cv2.VideoCapture(0)
 
+i = 0
 while True:
+    i += 1
     start_time = time.time()
     ret, frame = cap.read()
-    # print(frame.shape)
-    # frame = get_esp_frame()
-    
+
     start_time = time.time()
     body_positions = body_finder.find_body_positions(frame)
-    
-    # face_positions = caffe_detect_faces.detect_faces(frame)
-    # face_positions_2 = face_finder.get_face_locations(frame)
 
     people_in_screen = []
+    
     for bodypos in body_positions:
         current_person_name = "No face"
         startX, startY, endX, endY = bodypos
-        body = cutout_image(frame, bodypos)
         middle_position = get_middle_position(bodypos)
+        body = cutout_image(frame, bodypos)
 
         
         for name, middle_pos in people.items():
@@ -103,31 +101,26 @@ while True:
                 people_in_screen.append(name)
                 break
         
-        # current_person_name = face_recognizer.recognize_face(frame, (left, top, right, bottom), loaded_encodings)
-        # cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
-        if current_person_name == "No face": 
-            faces = caffe_detect_faces.detect_faces(body)
-            # faces_2 = face_finder.get_face_locations(body)
+        if i % 30 == 0:
+            a = 1   
+        if current_person_name == "No face" or "Unknown" in current_person_name and i % 15 == 0 or i % 45 == 0:
+            if current_person_name in people:
+                people.pop(current_person_name)
+            if current_person_name in people_in_screen:
+                people_in_screen.remove(current_person_name)
+            bodyimg = cutout_image(frame, bodypos)
+            faces = caffe_detect_faces.detect_faces(bodyimg)
             if len(faces) == 0:
                 continue
-            print(f"Found {len(faces)} faces")
+            print(f"Found {len(faces)} faces in body, should be 1")
             face = faces[0]
-            # x, y, w, h = face
-            # left, top, right, bottom = startX + x, startY + y, startX + x + w, startY + y + h
+            
             left, top, right, bottom = face
             left += startX
             top += startY
             right += startX
             bottom += startY
-            # faces = caffe_detect_faces.detect_faces(body)
-            # if len(faces) == 0:
-            #     continue
-            # print(f"Found {len(faces)} faces")ä
-            # face = faces[0]
-            # # x, y, w, h = face
-            # # left, top, right, bottom = startX + x, startY + y, startX + x + w, startY + y + h
-            # left, top, right, bottom = face
-            # current_person_name = face_recognizer.recognize_face(frame, (left, top, right, bottom), loaded_encodings)
+            
             current_person_name = openface_recognizer.recognize_face_from_frame(frame, (left, top, right, bottom))
             confidence = float(current_person_name.split("-")[1])
             name = current_person_name.split("-")[0]
@@ -157,16 +150,3 @@ while True:
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
-
-
-
-
-
-
-
-
-
-
-
-
-     
