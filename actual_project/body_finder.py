@@ -39,7 +39,7 @@ def find_body_positions(frame):
 if __name__ == "__main__":
     import os
     import time
-    test_images_path = "zotherimages"
+    test_images_path = "old_shit/zotherimages"
     for filename in os.listdir(test_images_path):
         input_image = cv2.imread(f"{test_images_path}/{filename}")
         start_time = time.time()

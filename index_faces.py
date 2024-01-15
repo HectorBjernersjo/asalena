@@ -8,7 +8,7 @@ from PIL import Image
 import get_embeddings
 
 IMG_FOLDER = "deepface/images/db_img"
-IMG_FOLDER = "I:/.shortcut-targets-by-id/1-tD6MqrxaOmV-9_wxYe_CLwE2LvU_Vcs/Åsalena/jpg_only_face_facerec"
+IMG_FOLDER = "face_images"
 model = "DeepID"
 valid_img_formats = [".jpg", ".jpeg", ".png"]
 
@@ -38,7 +38,7 @@ for person_dir in os.listdir(IMG_FOLDER):
 # Convert the list of embeddings to a numpy array
 openface_embeddings = np.array(openface_embeddings).astype('float32')  # faiss requires float32 type
 
-with open("deepface/names.pkl", "wb") as f:
+with open("names.pkl", "wb") as f:
     pickle.dump(names, f)
 
 # Step 2: Build the faiss index
@@ -48,5 +48,5 @@ index = faiss.IndexFlatL2(d)  # use a flat L2 index; you can choose other indexe
 # Add the embeddings to the index
 index.add(openface_embeddings)
 # Save the index for later use if necessary
-faiss.write_index(index, "deepface/face_index.faiss")
+faiss.write_index(index, "face_index.faiss")
 print("Index trained and saved")

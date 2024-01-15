@@ -35,7 +35,7 @@ openface_preprocess = transforms.Compose([
 ])
 
 if __name__ != "__main__":
-    openface_model = torch.load("deepface/openface_quantized.pt")
+    openface_model = torch.load("openface_quantized.pt")
     openface_model.eval()
 
 
