@@ -36,7 +36,7 @@ def detect_faces(frame):
             face_locations.append(face_location)
 
     if len(face_locations) > 0 and np.amax(face_locations) > 640:
-        print("WARNING: Face detection is not working as expected. Please check if the camera is working properly.")
+        print("WARNING2: Face detection is not working as expected. Please check if the camera is working properly.")
     return face_locations
 
     

@@ -1,4 +1,7 @@
+import sys
+sys.path.append('..')
 import cv2
+import threading
 import numpy as np
 import time
 import os
@@ -16,15 +19,13 @@ times_for_face_detection_in_bodies = 0
 time_for_face_recognition_general = 0
 times_for_face_recognition_general = 0
 
-# ENCODINGS_PATH = "face_recognition/encodingsold.pkl"
-
-# with open(ENCODINGS_PATH, "rb") as f:
-#         loaded_encodings = pickle.load(f)
 
 
 def get_esp_frame():
-    esp_url = "http://192.168.50.217/"
-    stream = requests.get(esp_url, stream=True)
+    # url = "http://192.168.50.217/" # hemma
+    # url = 'http://192.168.2.217' # mange
+    url = 'http://192.168.1.202:4747/video' # telefon hos anton
+    stream = requests.get(url, stream=True)
     byte_stream = bytes()
     for chunk in stream.iter_content(chunk_size=1024):
         byte_stream += chunk
@@ -63,24 +64,70 @@ def draw_frame(frame, fps):
 
 def save_face(face_img, name, confidence):
     folder = "face_images"
-    if confidence < 0.35:
-        folder += f"/{name}"
+    if confidence < 0.5:
+        return
     if not os.path.exists(folder):
         os.makedirs(folder)
-    cv2.imwrite(f"{folder}/{name}-{time.time()}.jpg", face_img)
+    cv2.imwrite(f"{folder}/{name}-{confidence}-{time.time()}.jpg", face_img)
 
+
+def fetch_latest_frame(cap, latest_frame):
+    while True:
+        ret, frame = cap.read()
+        if ret:
+            with threading.Lock():
+                latest_frame[0] = frame
+        else:
+            break
         
+use_esp = False
+use_phone = True
+use_webcam = False
+
+phone_url = "http://192.168.4.3:4747/video/1080p" # esp
+# phone_url = "http://192.168.2.91:4747/video/1080p" # mange
 
 people = {}
-
-cap = cv2.VideoCapture(0)
-
+if use_phone:
+    cap = cv2.VideoCapture(phone_url)
+elif use_webcam:
+    cap = cv2.VideoCapture(0)
 i = 0
-while True:
-    i += 1
-    start_time = time.time()
-    ret, frame = cap.read()
 
+
+latest_frame = [None]
+thread = threading.Thread(target=fetch_latest_frame, args=(cap, latest_frame))
+thread.start()
+
+while True:
+    start_time = time.time()
+    if use_esp:
+        frame = get_esp_frame()
+    elif use_webcam:
+        ret, frame = cap.read()
+    else:
+        if latest_frame[0] is not None:
+            with threading.Lock():
+                frame = latest_frame[0]
+                # cv2.imshow('Camera Stream', latest_frame[0])
+        else:
+            continue
+
+    i += 1
+    # else:
+    #     latest_frame = None
+    #     start_time = time.time()
+    #     while True:
+    #         if cap.grab():
+    #             ret, frame = cap.retrieve()
+    #             if ret:
+    #                 latest_frame = frame
+    #         else:
+    #             break
+    #         # Break the loop if no new frame is available for 0.1 seconds
+    #         if time.time() - start_time > 0.001:
+    #             break
+    #     frame = latest_frame
     start_time = time.time()
     body_positions = body_finder.find_body_positions(frame)
 
@@ -147,5 +194,5 @@ while True:
 
     # print(f"Time to process frame: {time.time() - start_time} seconds")
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    if cv2.waitKey(1) & 0xFF == ord('q'): 
         break

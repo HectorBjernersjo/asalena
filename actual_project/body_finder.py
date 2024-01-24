@@ -1,3 +1,5 @@
+import sys
+sys.path.append('..')
 import cv2
 import numpy as np
 
@@ -12,11 +14,11 @@ def find_body_positions(frame):
     net.setInput(blob)
     detections = net.forward()
     
-    bodie_positions = []
+    body_positions = []
 
     for i in range(detections.shape[2]):
         confidence = detections[0, 0, i, 2]
-        if confidence > 0.2:
+        if confidence > 0.15:
             class_id = int(detections[0, 0, i, 1])
             if classes[class_id] == "person":
                 box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
@@ -30,11 +32,11 @@ def find_body_positions(frame):
                     endX = w
                 if endY > h:
                     endY = h
-                bodie_positions.append((startX, startY, endX, endY))
+                body_positions.append((startX, startY, endX, endY))
     
     # for pos in body_positions:
 
-    return bodie_positions
+    return body_positions
 
 if __name__ == "__main__":
     import os

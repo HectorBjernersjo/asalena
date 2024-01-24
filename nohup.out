@@ -1,0 +1,1 @@
+ignoreboth or ignorespace present in bash HISTCONTROL setting, showing running command in window title will not be robust

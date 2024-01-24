@@ -38,13 +38,15 @@ def recognize_face_from_image(face_img):
     if distance > 0.9:
         best_name = "Unknown"
     # distances round to two decimals
-    return f"{best_name}-{distances[0][0]:.2f}"
+    # return f"{best_name}-{distances[0][0]:.2f}"
+    return best_name, distance
 
 def recognize_face_from_frame(frame, face_position):
     left, top, right, bottom = face_position
     face_img = frame[top:bottom, left:right]
     # save face image
     plt_image = Image.fromarray(cv2.cvtColor(face_img, cv2.COLOR_BGR2RGB))
-    name = recognize_face_from_image(face_img)
-    plt_image.save(f"{IMG_FOLDER}/{name}-{time.time()}.jpg")
-    return name
+    name , distance= recognize_face_from_image(face_img)
+    # if distance > 0.5:
+    #     plt_image.save(f"{IMG_FOLDER}/{name}-{distance}-{time.time()}.jpg")
+    return f"{name} - {distance:.2f}"
